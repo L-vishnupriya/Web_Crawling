@@ -1,6 +1,6 @@
 from html.parser import HTMLParser
 from urllib import parse
-
+import logging
 
 class LinkFinder(HTMLParser):
 
@@ -10,16 +10,19 @@ class LinkFinder(HTMLParser):
         self.page_url = page_url
         self.links = set()
 
-    # When we call HTMLParser feed() this function is called when it encounters an opening tag <a>
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
             for (attribute, value) in attrs:
                 if attribute == 'href':
-                    url = parse.urljoin(self.base_url, value)
-                    self.links.add(url)
+                    try:
+                        url = parse.urljoin(self.base_url, value)
+                        if url:
+                            self.links.add(url)
+                    except Exception as e:
+                        logging.error(f"Error processing URL {self.page_url}: {e}")
 
     def page_links(self):
         return self.links
 
     def error(self, message):
-        pass
+        logging.error(f"HTML Parsing Error: {message}")
