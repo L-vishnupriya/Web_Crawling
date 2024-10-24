@@ -2,10 +2,9 @@ from urllib.request import urlopen
 from link_finder import LinkFinder
 from domain import *
 from general import *
-
+import logging
 
 class Spider:
-
     project_name = ''
     base_url = ''
     domain_name = ''
@@ -23,7 +22,6 @@ class Spider:
         self.boot()
         self.crawl_page('First spider', Spider.base_url)
 
-    # Creates directory and files for project on first run and starts the spider
     @staticmethod
     def boot():
         create_project_dir(Spider.project_name)
@@ -31,18 +29,21 @@ class Spider:
         Spider.queue = file_to_set(Spider.queue_file)
         Spider.crawled = file_to_set(Spider.crawled_file)
 
-    # Updates user display, fills queue and updates files
     @staticmethod
     def crawl_page(thread_name, page_url):
         if page_url not in Spider.crawled:
+            logging.info(f"{thread_name} is crawling {page_url}")
             print(thread_name + ' now crawling ' + page_url)
             print('Queue ' + str(len(Spider.queue)) + ' | Crawled  ' + str(len(Spider.crawled)))
             Spider.add_links_to_queue(Spider.gather_links(page_url))
-            Spider.queue.remove(page_url)
+            try:
+                Spider.queue.remove(page_url)
+            except KeyError:
+                logging.warning(f"Attempted to remove {page_url} but it was not in the queue.")
             Spider.crawled.add(page_url)
             Spider.update_files()
+            logging.info(f"Completed crawling {page_url}")
 
-    # Converts raw response data into readable information and checks for proper html formatting
     @staticmethod
     def gather_links(page_url):
         html_string = ''
@@ -54,16 +55,16 @@ class Spider:
             finder = LinkFinder(Spider.base_url, page_url)
             finder.feed(html_string)
         except Exception as e:
-            print(str(e))
+            logging.error(f"Error gathering links from {page_url}: {e}")
             return set()
         return finder.page_links()
 
-    # Saves queue data to project files
     @staticmethod
     def add_links_to_queue(links):
         for url in links:
             if (url in Spider.queue) or (url in Spider.crawled):
                 continue
+            # You can modify this to crawl external links if needed
             if Spider.domain_name != get_domain_name(url):
                 continue
             Spider.queue.add(url)
