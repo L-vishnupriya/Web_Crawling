@@ -31,3 +31,14 @@ def set_to_file(links, file_name):
     with open(file_name, "w") as f:
         for l in sorted(links):
             f.write(l + "\n")
+def delete_file_contents(path):
+    # Create the directory if it does not exist
+    if not os.path.exists(os.path.dirname(path)):
+        os.makedirs(os.path.dirname(path))
+    # Create the file if it doesn't exist, then clear its contents
+    if not os.path.isfile(path):
+        with open(path, 'w') as f:
+            pass
+    else:
+        open(path, 'w').close()
+            
